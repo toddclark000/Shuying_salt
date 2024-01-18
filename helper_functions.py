@@ -38,7 +38,7 @@ def rescale_resolution(input_file, output_file, scaling_factor):
         outputType= gdal.GDT_Float32,
         width=new_width,
         height=new_height,
-        resampleAlg=gdal.GRA_Average,  # You can change the resampling method as needed
+        resampleAlg=gdal.GRA_Sum,  # You can change the resampling method as needed
     )
     
     #transfor,
@@ -135,8 +135,15 @@ def convert_to_geochem_nc(tif_file_path, nc_output_path, template_ds):
     
     #create regrid object
     regridder = xe.Regridder(input_ds, template_ds, "conservative")
+    ############################################################################################################################################
+    # I AM NOT SURE IF THE xe.Regridder NORMALIZES FLUX VALUE TO CELL AREA
+    # SEE REFERENCE https://journals.ametsoc.org/view/journals/mwre/127/9/1520-0493_1999_127_2204_fasocr_2.0.co_2.xml
+    # I also don't know why I'm getting /uufs/chpc.utah.edu/common/home/u1285966/mambaforge-pypy3/envs/xesmf_env/lib/python3.11/site-packages/xesmf/backend.py:56: UserWarning: Latitude is outside of [-90, 90]
+    # warnings.warn('Latitude is outside of [-90, 90]') because the data is in epsg 
+    ############################################################################################################################################
     
     #regrid xarray object
-    template_ds = regridder(input_ds)
-    template_ds.to_netcdf(nc_output_path)
+    regrided_ds = regridder(input_ds)
+    regrided_ds = regrided_ds.where(regrided_ds > 0, 0)#).fillna(0)
+    regrided_ds.to_netcdf(nc_output_path)
     
