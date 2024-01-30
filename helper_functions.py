@@ -85,7 +85,7 @@ def create_mask(input_file, output_file, threshold):
 
 def transform_5070_to_4326(tif_path_5070, tif_path_4326):
     '''
-    takes tiff input in 5070 and transforms it to 4326
+    takes tiff input in 5070 and transforms it to 4326 (I don't know what error is created here)
 
     Parameters
     ----------
@@ -93,22 +93,16 @@ def transform_5070_to_4326(tif_path_5070, tif_path_4326):
         path to input 5070 tif file.
     tif_path_4326 : string
         path to ouput 4326 tif file
-
     Returns
     -------
     None.
-
     '''
-    
-    
     input_ds = gdal.Open(tif_path_5070)
     driver = gdal.GetDriverByName("GTiff")
     output_ds = gdal.Warp(tif_path_4326, input_ds, dstSRS="EPSG:4326")
 
 def convert_to_geochem_nc(tif_file_path, nc_output_path, template_ds):
     '''
-    
-
     Parameters
     ----------
     tif_file_path : TYPE
@@ -143,7 +137,11 @@ def convert_to_geochem_nc(tif_file_path, nc_output_path, template_ds):
     ############################################################################################################################################
     
     #regrid xarray object
-    regrided_ds = regridder(input_ds)
+    regrided_ds = regridder(input_ds) #when I plot this it looks like data disappears around the ocean
     regrided_ds = regrided_ds.where(regrided_ds > 0, 0) # this replaces all negitive values with zeros. (I am not sure where the negatives come form)
+    
+    # multiply by area to get what I should be total salt (could be error in )
+    regrided_ds = regrided_ds * template_ds["AREA"] #havent tested this
+    
     regrided_ds.to_netcdf(nc_output_path)
     
