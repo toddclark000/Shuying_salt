@@ -144,6 +144,6 @@ def convert_to_geochem_nc(tif_file_path, nc_output_path, template_ds):
     
     #regrid xarray object
     regrided_ds = regridder(input_ds)
-    regrided_ds = regrided_ds.where(regrided_ds > 0, 0)#).fillna(0)
+    regrided_ds = regrided_ds.where(regrided_ds > 0, 0) # this replaces all negitive values with zeros. (I am not sure where the negatives come form)
     regrided_ds.to_netcdf(nc_output_path)
     
