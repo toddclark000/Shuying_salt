@@ -99,7 +99,7 @@ def transform_5070_to_4326(tif_path_5070, tif_path_4326):
     '''
     input_ds = gdal.Open(tif_path_5070)
     driver = gdal.GetDriverByName("GTiff")
-    output_ds = gdal.Warp(tif_path_4326, input_ds, dstSRS="EPSG:4326")
+    output_ds = gdal.Warp(tif_path_4326, input_ds, dstSRS="EPSG:4326") #output_ds = gdal.Warp(tif_path_4326, input_ds, dstSRS="EPSG:4326")
 
 def convert_to_geochem_nc(tif_file_path, nc_output_path, template_ds):
     '''
@@ -138,7 +138,7 @@ def convert_to_geochem_nc(tif_file_path, nc_output_path, template_ds):
     
     #regrid xarray object
     regrided_ds = regridder(input_ds) #when I plot this it looks like data disappears around the ocean
-    regrided_ds = regrided_ds.where(regrided_ds > 0, 0) # this replaces all negitive values with zeros. (I am not sure where the negatives come form)
+    regrided_ds = regrided_ds.where(regrided_ds > 0, 0) # this replaces all negative values with zeros. (I am not sure where the negatives come form)
     
     # multiply by area to get what I should be total salt (could be error in )
     regrided_ds = regrided_ds * template_ds["AREA"] #havent tested this
