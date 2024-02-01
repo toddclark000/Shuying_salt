@@ -141,7 +141,8 @@ def convert_to_geochem_nc(tif_file_path, nc_output_path, template_ds):
     regrided_ds = regrided_ds.where(regrided_ds > 0, 0) # this replaces all negative values with zeros. (I am not sure where the negatives come form)
     
     # multiply by area to get what I should be total salt (could be error in )
-    regrided_ds = regrided_ds * template_ds["AREA"] #havent tested this
+    
+    #regrided_ds = regrided_ds * template_ds["AREA"] #havent tested this
     
     regrided_ds.to_netcdf(nc_output_path)
     
