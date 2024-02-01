@@ -98,8 +98,8 @@ def transform_5070_to_4326(tif_path_5070, tif_path_4326):
     None.
     '''
     input_ds = gdal.Open(tif_path_5070)
-    driver = gdal.GetDriverByName("GTiff")
-    output_ds = gdal.Warp(tif_path_4326, input_ds, dstSRS="EPSG:4326") #output_ds = gdal.Warp(tif_path_4326, input_ds, dstSRS="EPSG:4326")
+    #driver = gdal.GetDriverByName("GTiff")
+    gdal.Warp(tif_path_4326, input_ds, dstSRS="EPSG:4326") #output_ds = gdal.Warp(tif_path_4326, input_ds, dstSRS="EPSG:4326") #when I test this I should remove theses comments
 
 def convert_to_geochem_nc(tif_file_path, nc_output_path, template_ds):
     '''
