@@ -9,6 +9,12 @@ import xesmf as xe
 import numpy as np
 from osgeo import gdal
 
+def replace_none_with_0(input_file_path, output_file_path):
+    xr_array = rioxarray.open_rasterio(input_file_path)
+    xr_array = xr_array.where(xr_array != xr_array._FillValue, 0)
+    xr_array.rio.to_raster(output_file_path)
+    xr_array.plot()
+
 def rescale_resolution(input_file, output_file, scaling_factor):
     '''
     Parameters
@@ -23,7 +29,6 @@ def rescale_resolution(input_file, output_file, scaling_factor):
     Returns
     -------
     None.
-
     '''
     #open input file
     ds = gdal.Open(input_file)
@@ -138,7 +143,7 @@ def convert_to_geochem_nc(tif_file_path, nc_output_path, template_ds):
     
     #regrid xarray object
     regrided_ds = regridder(input_ds) #when I plot this it looks like data disappears around the ocean
-    regrided_ds = regrided_ds.where(regrided_ds > 0, 0) # this replaces all negative values with zeros. (I am not sure where the negatives come form)
+    #regrided_ds = regrided_ds.where(regrided_ds > 0, 0) # this replaces all negative values with zeros. (I am not sure where the negatives come form)
     
     # multiply by area to get what I should be total salt (could be error in )
     
