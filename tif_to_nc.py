@@ -33,7 +33,7 @@ def tif_to_nc(fulrez_4326_path, lowrez_4326_path, output_nc_path, tif_5070_path,
     transform_5070_to_4326(tif_5070_path_none_with_0, fulrez_4326_path)
     replace_none_with_0(fulrez_4326_path, fulrez_4326_path_none_with_0)
     rescale_resolution(fulrez_4326_path_none_with_0, lowrez_4326_path, scaling_factor)
-    #convert_to_geochem_nc(lowrez_4326_path, output_nc_path, template_ds)
+    convert_to_geochem_nc(lowrez_4326_path, output_nc_path, template_ds)
 
 def tif_to_nc_without_replacing_zeros(fulres_4326_path, lowres_4326_path, output_nc_path, tif_5070_path, template_path,scaling_factor = 0.01):
     """
