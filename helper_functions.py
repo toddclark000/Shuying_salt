@@ -11,9 +11,12 @@ from osgeo import gdal
 
 def replace_none_with_0(input_file_path, output_file_path):
     xr_array = rioxarray.open_rasterio(input_file_path)
-    xr_array = xr_array.where(xr_array != xr_array._FillValue, 0)
+    
+    #replace possible null values
+    xr_array = xr_array.where(xr_array != xr_array._FillValue, 0) #remove array null value
+    xr_array = xr_array.where(xr_array.notnull(),0) #remove Nan, None, or NaT
+    
     xr_array.rio.to_raster(output_file_path)
-    xr_array.plot()
 
 def rescale_resolution(input_file, output_file, scaling_factor):
     '''
@@ -40,7 +43,7 @@ def rescale_resolution(input_file, output_file, scaling_factor):
     # set options
     options = gdal.WarpOptions(
         format="GTiff",
-        outputType= gdal.GDT_Float32,
+        outputType = gdal.GDT_Float32, #outputType= gdal.GDT_Int64, this needs to be changed based on what is going to be done with the data for salt I am using a float because the data may have been fractionalized when being warped.
         width=new_width,
         height=new_height,
         resampleAlg=gdal.GRA_Sum,  # You can change the resampling method as needed
@@ -97,14 +100,23 @@ def transform_5070_to_4326(tif_path_5070, tif_path_4326):
     tif_path_5070 : string
         path to input 5070 tif file.
     tif_path_4326 : string
-        path to ouput 4326 tif file
+        path to output 4326 tif file
     Returns
     -------
     None.
     '''
     input_ds = gdal.Open(tif_path_5070)
-    #driver = gdal.GetDriverByName("GTiff")
-    gdal.Warp(tif_path_4326, input_ds, dstSRS="EPSG:4326") #output_ds = gdal.Warp(tif_path_4326, input_ds, dstSRS="EPSG:4326") #when I test this I should remove theses comments
+    
+        # set options
+    options = gdal.WarpOptions(
+        format="GTiff",
+        outputType = gdal.GDT_Float32,
+        srcSRS = "EPSG:5070", 
+        dstSRS="EPSG:4326"
+    )
+    
+    gdal.Warp(tif_path_4326, input_ds, options = options) # goes from srcSRS to dstSRS
+    input_ds = None #close the data set
 
 def convert_to_geochem_nc(tif_file_path, nc_output_path, template_ds):
     '''
