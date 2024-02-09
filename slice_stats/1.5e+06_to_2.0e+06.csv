@@ -1,0 +1,6 @@
+,Total_in_slice,Lowest_lon,Highest_lon,Lowest_lat,Highest_lat
+raster_fulrez_4326_1.5e+06_to_2.0e+06,19028643840,-130,-63,21,52
+raster_fulrez_4326_1.5e+06_to_2.0e+06_none_with_0,19028643840,-130,-63,21,52
+raster_lowres_4326_1.5e+06_to_2.0e+06,19028656128,-130,-63,21,52
+raster_fulrez_5070_1.5e+06_to_2.0e+06_none_with_0,20599611392,-2492545,2342455,177785,3309785
+raster_cf_nc_4326_1.5e+06_to_2.0e+0,12622804992,-180,179,-90,90
