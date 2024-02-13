@@ -7,7 +7,9 @@ Created on Sun Oct 26 2023
 import rioxarray
 import xesmf as xe
 import numpy as np
+import numpy.matlib as npm
 from osgeo import gdal
+import rasterio
 
 def replace_none_with_0(input_file_path, output_file_path):
     xr_array = rioxarray.open_rasterio(input_file_path)
@@ -112,7 +114,8 @@ def transform_5070_to_4326(tif_path_5070, tif_path_4326):
         format="GTiff",
         outputType = gdal.GDT_Float32,
         srcSRS = "EPSG:5070", 
-        dstSRS="EPSG:4326"
+        dstSRS ="EPSG:4326",
+        resampleAlg = gdal.GRA_Sum
     )
     
     gdal.Warp(tif_path_4326, input_ds, options = options) # goes from srcSRS to dstSRS
@@ -140,6 +143,7 @@ def convert_to_geochem_nc(tif_file_path, nc_output_path, template_ds):
     #convert to data set
     input_ds = input_ds.to_dataset(name = "input")
     input_ds.rio.write_grid_mapping(inplace = True) # I don't know what this line does
+    # reggrider weights
     
     #rename axes so data will work with regridder
     input_ds = input_ds.rename({'x':'lon','y':'lat'})
@@ -159,7 +163,46 @@ def convert_to_geochem_nc(tif_file_path, nc_output_path, template_ds):
     
     # multiply by area to get what I should be total salt (could be error in )
     
-    #regrided_ds = regrided_ds * template_ds["AREA"] #havent tested this
+    #regrided_ds = regrided_ds * template_ds["AREA"] #havent tested this # this doesn't work. Never use this
     
     regrided_ds.to_netcdf(nc_output_path)
+    
+    
+def build_area_array(file_path):
+    with rasterio.open(file_path) as testif:
+        rast = testif.read(1)
+        gt = testif.transform
+        pix_width = gt[0]
+        ulX = gt[2]
+        ulY = gt[5]
+        rows = testif.height
+        cols = testif.width
+        lrX = ulX + gt[0] * cols
+        lrY = ulY + gt[4] * rows
+
+    lats = np.linspace(ulY,lrY,rows+1)
+
+    a = 6378137
+    b = 6356752.3142
+
+    # Degrees to radians
+    lats = lats * np.pi/180
+
+    # Intermediate vars
+    e = np.sqrt(1-(b/a)**2)
+    sinlats = np.sin(lats)
+    zm = 1 - e * sinlats
+    zp = 1 + e * sinlats
+
+    # Distance between meridians
+    #        q = np.diff(longs)/360
+    q = pix_width/360
+
+    # Compute areas for each latitude in square km
+    areas_to_equator = np.pi * b**2 * ((2*np.arctanh(e*sinlats) / (2*e) + sinlats / (zp*zm))) / 10**6
+    areas_between_lats = np.diff(areas_to_equator)
+    areas_cells = np.abs(areas_between_lats) * q
+
+    areagrid = np.transpose(npm.repmat(areas_cells,cols,1))
+    return areagrid
     

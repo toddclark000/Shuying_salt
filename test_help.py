@@ -13,7 +13,7 @@ from tif_to_nc import tif_to_nc_without_replacing_zeros
 #TODO: I need to fix the sig-figs on range print outs
 
 # create slice files
-def slice_raster (input_file_path, output_folder, plot = False):
+def slice_raster (input_file_path:str, output_folder, plot = False):
     
     #open array snd convert none values to zero
     xr_array = rioxarray.open_rasterio(input_file_path)
@@ -95,6 +95,7 @@ def run_stats(keys, paths_to_rasters_2d):
             
             row_stats = {
                 "Total_in_slice":int(xr_array.sum()),
+                #"Average_Weight":, see teams
                 "Lowest_lon":int(xr_array.x.min()),
                 "Highest_lon":int(xr_array.x.max()),
                 "Lowest_lat":int(xr_array.y.min()),
