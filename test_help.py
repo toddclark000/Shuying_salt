@@ -13,13 +13,22 @@ from tif_to_nc import tif_to_nc_without_replacing_zeros
 #TODO: I need to fix the sig-figs on range print outs
 
 # create slice files
-def slice_raster (input_file_path:str, output_folder, plot = False):
+def slice_raster (input_file_path:str, output_folder,number_of_steps = "n/a", plot = False):
     
     #open array snd convert none values to zero
     xr_array = rioxarray.open_rasterio(input_file_path)
     xr_array = xr_array.where(xr_array != xr_array._FillValue,0)
     
-    slices = np.arange(0, int(3.5e6)+1, int(0.5e6))
+    y_min = xr_array.y.min()
+    y_max = xr_array.y.max()
+    y_range = y_max - y_min
+   
+    if(number_of_steps == "n/a"):
+        step_size = 500000 
+    else:
+        step_size = int(y_range/number_of_steps)
+    
+    slices = np.arange(y_min, y_max+1, step_size)
     
     slice_paths = []
     for index in range(len(slices)-1):
@@ -94,12 +103,14 @@ def run_stats(keys, paths_to_rasters_2d):
             xr_array = xr_array.where(xr_array != xr_array._FillValue,0) #remove none values so stats can calculate ok
             
             row_stats = {
-                "Total_in_slice":int(xr_array.sum()),
+                "Total_in_slice":float(xr_array.sum()),
                 #"Average_Weight":, see teams
-                "Lowest_lon":int(xr_array.x.min()),
-                "Highest_lon":int(xr_array.x.max()),
-                "Lowest_lat":int(xr_array.y.min()),
-                "Highest_lat":int(xr_array.y.max())
+                "Lowest_lon":float(xr_array.x.min()),
+                "Highest_lon":float(xr_array.x.max()),
+                "Lowest_lat":float(xr_array.y.min()),
+                "Highest_lat":float(xr_array.y.max()),
+                "x_Resolution":np.abs(float(xr_array.x[1]) - float(xr_array.x[2])),
+                "y_Resolution":np.abs(float(xr_array.y[1]) - float(xr_array.y[2]))
             }
             
             name = path[20:len(path)-4]

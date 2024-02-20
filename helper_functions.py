@@ -139,6 +139,10 @@ def convert_to_geochem_nc(tif_file_path, nc_output_path, template_ds):
     '''
     #open file as xarray object using rioxarray
     input_ds = rioxarray.open_rasterio(tif_file_path)
+    #ensure there are no nan-values
+    #replace possible null values
+    input_ds = input_ds.where(input_ds != input_ds._FillValue, 0) #remove array null value
+    input_ds = input_ds.where(input_ds.notnull(),0) #remove Nan, None, or NaT
     
     #convert to data set
     input_ds = input_ds.to_dataset(name = "input")
@@ -206,3 +210,83 @@ def build_area_array(file_path):
     areagrid = np.transpose(npm.repmat(areas_cells,cols,1))
     return areagrid
     
+    
+    
+## from xesmf regrid.py
+def make_regridder_L2L(
+        llres_in,
+        llres_out,
+        weightsdir='.',
+        reuse_weights=False,
+        in_extent=[-180, 180, -90, 90],
+        out_extent=[-180, 180, -90, 90]
+):
+    """
+    Create an xESMF regridder between two lat/lon grids
+
+    Args:
+        llres_in: str
+            Resolution of input grid in format 'latxlon', e.g. '4x5'
+        llres_out: str
+            Resolution of output grid in format 'latxlon', e.g. '4x5'
+
+    Keyword Args (optional):
+        weightsdir: str
+            Directory in which to create xESMF regridder NetCDF files
+            Default value: '.'
+        reuse_weights: bool
+            Set this flag to True to reuse existing xESMF regridder NetCDF files
+            Default value: False
+        in_extent: list[float, float, float, float]
+            Describes minimum and maximum latitude and longitude of input grid
+            in the format [minlon, maxlon, minlat, maxlat]
+            Default value: [-180, 180, -90, 90]
+        out_extent: list[float, float, float, float]
+            Desired minimum and maximum latitude and longitude of output grid
+            in the format [minlon, maxlon, minlat, maxlat]
+            Default value: [-180, 180, -90, 90]
+
+    Returns:
+        regridder: xESMF regridder
+            regridder object between the two specified grids
+    """
+
+    llgrid_in = make_grid_LL(llres_in, in_extent, out_extent)
+    llgrid_out = make_grid_LL(llres_out, out_extent)
+    if in_extent == [-180, 180, -90,
+                     90] and out_extent == [-180, 180, -90, 90]:
+        weightsfile = os.path.join(
+            weightsdir, 'conservative_{}_{}.nc'.format(
+                llres_in, llres_out))
+    else:
+        in_extent_str = str(in_extent).replace(
+            '[', '').replace(
+            ']', '').replace(
+            ', ', 'x')
+        out_extent_str = str(out_extent).replace(
+            '[', '').replace(
+            ']', '').replace(
+            ', ', 'x')
+        weightsfile = os.path.join(
+            weightsdir, 'conservative_{}_{}_{}_{}.nc'.format(
+                llres_in, llres_out, in_extent_str, out_extent_str))
+
+    if not os.path.isfile(weightsfile) and reuse_weights:
+        #prevent error with more recent versions of xesmf
+        reuse_weights=False
+
+    try:
+        regridder = xe.Regridder(
+            llgrid_in,
+            llgrid_out,
+            method='conservative',
+            filename=weightsfile,
+            reuse_weights=reuse_weights)
+    except BaseException:
+        regridder = xe.Regridder(
+            llgrid_in,
+            llgrid_out,
+            method='conservative',
+            filename=weightsfile,
+            reuse_weights=reuse_weights)
+    return regridder
