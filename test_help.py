@@ -6,11 +6,9 @@ import pandas as pd
 import rioxarray
 import matplotlib.pyplot as plt
 
-#from within the project
+# from within the project
 from tif_to_nc import tif_to_nc
-from tif_to_nc import tif_to_nc_without_replacing_zeros
-
-#TODO: I need to fix the sig-figs on range print outs
+# from tif_to_nc import tif_to_nc_without_replacing_zeros
 
 # create slice files
 def slice_raster (input_file_path:str, output_folder,number_of_steps = "n/a", plot = False):
@@ -68,43 +66,45 @@ def convert_slices (
         slice_range = f'{slices[index]:.1e}_to_{slices[index+1]:.1e}'
         
         fulrez_4326_path = f"{output_folder}raster_{resolutions[0]}_{epsg_s[1]}_{slice_range}.tif"
-        fulrez_4326_path_none_with_0 = f"{output_folder}raster_{resolutions[0]}_{epsg_s[1]}_{slice_range}_none_with_0.tif"
         lowrez_4326_path = f"{output_folder}raster_{resolutions[1]}_{epsg_s[1]}_{slice_range}.tif"
         output_nc_path = f"{output_folder}raster_{resolutions[2]}_{epsg_s[1]}_{slice_range}.nc"
         input_tif_5070_path = slice_path
-        tif_5070_path_none_with_0 = f"{output_folder}raster_{resolutions[0]}_{epsg_s[0]}_{slice_range}_none_with_0.tif"
         
         tif_to_nc(
             fulrez_4326_path,
             lowrez_4326_path,
             output_nc_path,
             input_tif_5070_path,
-            tif_5070_path_none_with_0,
-            fulrez_4326_path_none_with_0,
             template_path,
             scaling_factor=scaling_factor)
         
         output_nc_paths.append(output_nc_path)
-        all_paths.append([fulrez_4326_path, fulrez_4326_path_none_with_0, lowrez_4326_path, tif_5070_path_none_with_0, output_nc_path])
+        all_paths.append([fulrez_4326_path, lowrez_4326_path, output_nc_path, input_tif_5070_path])
         range_key.append(slice_range)
         
         print(f"finished converting {slice_range}")
         
     return range_key, output_nc_paths, all_paths
 
-def run_stats(keys, paths_to_rasters_2d):
+def run_stats(keys, paths_to_all_rasters):
+    
+    # loops through files for each slice
     for index, key in enumerate(keys):
-        paths_to_rasters_1d = paths_to_rasters_2d[index]
+        
+        print(f"starting to take stats slice: {key}")
+        paths_to_slice_rasters = paths_to_all_rasters[index]
         slice_data = []
         index_names = []
         
-        for path in paths_to_rasters_1d:
+        #loops through each type of file saved for the slice
+        for path in paths_to_slice_rasters:
+            
             xr_array = rioxarray.open_rasterio(path)
             xr_array = xr_array.where(xr_array != xr_array._FillValue,0) #remove none values so stats can calculate ok
             
+            #calculates stats of file
             row_stats = {
                 "Total_in_slice":float(xr_array.sum()),
-                #"Average_Weight":, see teams
                 "Lowest_lon":float(xr_array.x.min()),
                 "Highest_lon":float(xr_array.x.max()),
                 "Lowest_lat":float(xr_array.y.min()),
@@ -113,14 +113,10 @@ def run_stats(keys, paths_to_rasters_2d):
                 "y_Resolution":np.abs(float(xr_array.y[1]) - float(xr_array.y[2]))
             }
             
-            name = path[20:len(path)-4]
+            name = path[19:len(path)-4]
             slice_data.append(row_stats)
             index_names.append(name)
             print(f'    finished taking stats for {name}')
    
         slice_df = pd.DataFrame(slice_data, index = index_names)
         slice_df.to_csv(f"slice_stats/{key}.csv")
-        print(f"finished taking stats for {key}")
-    
-
-# get stats
